@@ -1,0 +1,51 @@
+diff --git a/app/src/main/java/io/nekohasekai/sfa/ui/dashboard/GroupsFragment.kt b/app/src/main/java/io/nekohasekai/sfa/ui/dashboard/GroupsFragment.kt
+index 47daa2f..b851bb5 100644
+--- a/app/src/main/java/io/nekohasekai/sfa/ui/dashboard/GroupsFragment.kt
++++ b/app/src/main/java/io/nekohasekai/sfa/ui/dashboard/GroupsFragment.kt
+@@ -69,6 +69,7 @@ class GroupsFragment : Fragment(), CommandClient.Handler {
+     override fun onDestroyView() {
+         super.onDestroyView()
+         binding = null
++        commandClient.disconnect()
+     }
+ 
+     private var displayed = false
+diff --git a/app/src/main/java/io/nekohasekai/sfa/ui/main/DashboardFragment.kt b/app/src/main/java/io/nekohasekai/sfa/ui/main/DashboardFragment.kt
+index 7258678..149e072 100644
+--- a/app/src/main/java/io/nekohasekai/sfa/ui/main/DashboardFragment.kt
++++ b/app/src/main/java/io/nekohasekai/sfa/ui/main/DashboardFragment.kt
+@@ -107,6 +107,7 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
+         super.onDestroyView()
+         mediator?.detach()
+         mediator = null
++        (binding?.dashboardPager?.adapter as? Adapter)?.destroyFragments()
+         binding = null
+     }
+ 
+@@ -164,13 +165,24 @@ class DashboardFragment : Fragment(R.layout.fragment_dashboard) {
+         Groups(R.string.title_groups, GroupsFragment::class.java);
+     }
+ 
+-    class Adapter(parent: Fragment) : FragmentStateAdapter(parent) {
++    class Adapter(val parent: Fragment) : FragmentStateAdapter(parent) {
++        private val fragments = mutableListOf<Fragment>()
++
+         override fun getItemCount(): Int {
+             return Page.entries.size
+         }
+ 
+         override fun createFragment(position: Int): Fragment {
+-            return Page.entries[position].fragmentClass.getConstructor().newInstance()
++            val fragment = Page.entries[position].fragmentClass.getConstructor().newInstance()
++            fragments.add(fragment)
++            return fragment
++        }
++
++        fun destroyFragments() {
++            val fragmentTransaction = parent.childFragmentManager.beginTransaction()
++            fragments.forEach(fragmentTransaction::remove)
++            fragmentTransaction.commitAllowingStateLoss()
++            fragments.clear()
+         }
+     }
+ 
